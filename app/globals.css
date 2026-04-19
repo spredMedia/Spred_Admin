@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Primary SPRED Palette - Dark First */
+    --background: 231 60% 9%; /* #0A0E27 */
+    --foreground: 210 40% 98%;
+    
+    --card: 233 41% 17%;
+    --card-foreground: 210 40% 98%;
+    
+    --popover: 231 60% 9%;
+    --popover-foreground: 210 40% 98%;
+    
+    --primary: 19 97% 48%; /* #F45303 (Spred Orange) */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 233 41% 17%;
+    --secondary-foreground: 210 40% 98%;
+    
+    --muted: 233 41% 17%;
+    --muted-foreground: 215 20% 65%;
+    
+    --accent: 174 54% 56%; /* #4ECDC4 (Turquoise) */
+    --accent-foreground: 231 60% 9%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --border: 233 41% 25%;
+    --input: 233 41% 25%;
+    --ring: 19 97% 48%;
+    
+    --radius: 1rem;
+  }
+}
+
+@layer components {
+  .glass-premium {
+    @apply backdrop-blur-xl bg-zinc-900 bg-opacity-60 border border-white border-opacity-10;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+
+  .glass-card {
+    background: rgba(21, 25, 50, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .status-pulse {
+    @apply relative flex h-2 w-2 rounded-full;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border) / 0.5);
+  }
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary selection:text-white;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(19, 97%, 48%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(174, 54%, 56%, 0.1) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+}
