@@ -25,6 +25,7 @@ import {
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { IngestMediaModal } from "@/components/IngestMediaModal";
+import { VideoPreviewModal } from "@/components/VideoPreviewModal";
 
 export default function ContentPage() {
   const [videos, setVideos] = useState<any[]>([]);

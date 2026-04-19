@@ -21,12 +21,18 @@ import {
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ActionModal } from "@/components/ActionModal";
+import { ModerationHistory } from "@/components/ModerationHistory";
+import { ModerationStats } from "@/components/ModerationStats";
+import { BulkModerationPanel } from "@/components/BulkModerationPanel";
+import { AutoFlagPanel } from "@/components/AutoFlagPanel";
 
 export default function ModerationHub() {
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
   const [filterPriority, setFilterPriority] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"queue" | "history" | "performance" | "auto-flag">("queue");
+  const [selectedReports, setSelectedReports] = useState<Set<string>>(new Set());
 
   // Modal State
   const [selectedReport, setSelectedReport] = useState<any>(null);
@@ -118,6 +124,29 @@ export default function ModerationHub() {
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="flex items-center gap-2 p-1.5 bg-white/5 rounded-2xl w-fit border border-white/5 backdrop-blur-md">
+        {[
+          { id: "queue", label: "Governance Queue" },
+          { id: "history", label: "History" },
+          { id: "performance", label: "Performance" },
+          { id: "auto-flag", label: "Auto Flagging" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as any)}
+            className={cn(
+              "px-4 py-2 rounded-xl text-xs font-bold transition-all uppercase tracking-widest",
+              activeTab === tab.id
+                ? "bg-primary text-white shadow-lg shadow-primary/20"
+                : "text-zinc-500 hover:text-white"
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Stats Summary */}
       <div className="grid gap-6 md:grid-cols-4">
         {[
@@ -136,8 +165,11 @@ export default function ModerationHub() {
         ))}
       </div>
 
-      {/* Report Queue */}
-      <div className="glass-card rounded-[3rem] border-white/5 overflow-hidden">
+      {/* Tab Content */}
+      {activeTab === "queue" && (
+        <>
+          {/* Report Queue */}
+          <div className="glass-card rounded-[3rem] border-white/5 overflow-hidden">
          <div className="p-8 border-b border-white/5 bg-white/[0.01] flex flex-col md:flex-row items-center justify-between gap-6">
             <h2 className="text-xl font-bold text-white">Priority Governance Queue</h2>
             <div className="relative flex-1 max-w-sm">
@@ -244,6 +276,42 @@ export default function ModerationHub() {
             </table>
          </div>
       </div>
+
+          {/* Bulk Moderation Panel */}
+          {selectedReports.size > 0 && (
+            <BulkModerationPanel
+              selectedCount={selectedReports.size}
+              onApproveAll={() => {
+                setSelectedReports(new Set());
+              }}
+              onRejectAll={() => {
+                setSelectedReports(new Set());
+              }}
+              onRemoveAll={() => {
+                setSelectedReports(new Set());
+              }}
+              onCancel={() => {
+                setSelectedReports(new Set());
+              }}
+            />
+          )}
+        </>
+      )}
+
+      {activeTab === "history" && (
+        <ModerationHistory maxItems={20} />
+      )}
+
+      {activeTab === "performance" && (
+        <ModerationStats />
+      )}
+
+      {activeTab === "auto-flag" && (
+        <AutoFlagPanel
+          onApprove={(id) => console.log("Approved:", id)}
+          onDismiss={(id) => console.log("Dismissed:", id)}
+        />
+      )}
 
       <ActionModal
         isOpen={isResolveModalOpen}
