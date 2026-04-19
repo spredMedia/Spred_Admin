@@ -19,9 +19,11 @@ import { DeviceDistributionHeatmap } from "@/components/DeviceDistributionHeatma
 import { P2PEconomicsDashboard } from "@/components/P2PEconomicsDashboard";
 import { AlertConfigurationPanel } from "@/components/AlertConfigurationPanel";
 import { ReportGeneratorDashboard } from "@/components/ReportGeneratorDashboard";
+import { ExportIntegrationManager } from "@/components/ExportIntegrationManager";
+import { AdvancedQueryBuilder } from "@/components/AdvancedQueryBuilder";
 
 export default function P2PMonitorPage() {
-  const [activeTab, setActiveTab] = useState<"transfers" | "trending" | "devices" | "quality" | "failed" | "bandwidth" | "compatibility" | "offline" | "bottlenecks" | "trends" | "anomalies" | "distribution" | "economics" | "alerts" | "reports">(
+  const [activeTab, setActiveTab] = useState<"transfers" | "trending" | "devices" | "quality" | "failed" | "bandwidth" | "compatibility" | "offline" | "bottlenecks" | "trends" | "anomalies" | "distribution" | "economics" | "alerts" | "reports" | "exports" | "queries">(
     "transfers"
   );
 
@@ -41,6 +43,8 @@ export default function P2PMonitorPage() {
     { id: "economics", label: "P2P Economics" },
     { id: "alerts", label: "Alert Configuration" },
     { id: "reports", label: "Report Generator" },
+    { id: "exports", label: "Export & Integration" },
+    { id: "queries", label: "Query Builder" },
   ];
 
   return (
@@ -96,6 +100,8 @@ export default function P2PMonitorPage() {
         {activeTab === "economics" && <P2PEconomicsDashboard />}
         {activeTab === "alerts" && <AlertConfigurationPanel />}
         {activeTab === "reports" && <ReportGeneratorDashboard />}
+        {activeTab === "exports" && <ExportIntegrationManager />}
+        {activeTab === "queries" && <AdvancedQueryBuilder />}
       </div>
 
       {/* Feature Highlights */}
