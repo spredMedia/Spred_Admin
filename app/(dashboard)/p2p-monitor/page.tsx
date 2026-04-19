@@ -9,9 +9,13 @@ import { EnhancedP2PTransferMonitor } from "@/components/EnhancedP2PTransferMoni
 import { DeviceTrustMatrix } from "@/components/DeviceTrustMatrix";
 import { ConnectionQualityMonitor } from "@/components/ConnectionQualityMonitor";
 import { FailedTransferAnalytics } from "@/components/FailedTransferAnalytics";
+import { BandwidthUtilizationMonitor } from "@/components/BandwidthUtilizationMonitor";
+import { DeviceCompatibilityMatrix } from "@/components/DeviceCompatibilityMatrix";
+import { OfflineCapabilityTracker } from "@/components/OfflineCapabilityTracker";
+import { NetworkBottleneckIdentifier } from "@/components/NetworkBottleneckIdentifier";
 
 export default function P2PMonitorPage() {
-  const [activeTab, setActiveTab] = useState<"transfers" | "trending" | "devices" | "quality" | "failed">(
+  const [activeTab, setActiveTab] = useState<"transfers" | "trending" | "devices" | "quality" | "failed" | "bandwidth" | "compatibility" | "offline" | "bottlenecks">(
     "transfers"
   );
 
@@ -21,6 +25,10 @@ export default function P2PMonitorPage() {
     { id: "devices", label: "Device Trust Matrix" },
     { id: "quality", label: "Connection Quality" },
     { id: "failed", label: "Failed Transfers" },
+    { id: "bandwidth", label: "Bandwidth Utilization" },
+    { id: "compatibility", label: "Device Compatibility" },
+    { id: "offline", label: "Offline Capability" },
+    { id: "bottlenecks", label: "Network Bottlenecks" },
   ];
 
   return (
@@ -66,6 +74,10 @@ export default function P2PMonitorPage() {
         {activeTab === "devices" && <DeviceTrustMatrix />}
         {activeTab === "quality" && <ConnectionQualityMonitor />}
         {activeTab === "failed" && <FailedTransferAnalytics />}
+        {activeTab === "bandwidth" && <BandwidthUtilizationMonitor />}
+        {activeTab === "compatibility" && <DeviceCompatibilityMatrix />}
+        {activeTab === "offline" && <OfflineCapabilityTracker />}
+        {activeTab === "bottlenecks" && <NetworkBottleneckIdentifier />}
       </div>
 
       {/* Feature Highlights */}
