@@ -5,15 +5,22 @@ import { Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { P2PTransferMonitor } from "@/components/P2PTransferMonitor";
 import { TrendingP2PVideos } from "@/components/TrendingP2PVideos";
+import { EnhancedP2PTransferMonitor } from "@/components/EnhancedP2PTransferMonitor";
+import { DeviceTrustMatrix } from "@/components/DeviceTrustMatrix";
+import { ConnectionQualityMonitor } from "@/components/ConnectionQualityMonitor";
+import { FailedTransferAnalytics } from "@/components/FailedTransferAnalytics";
 
 export default function P2PMonitorPage() {
-  const [activeTab, setActiveTab] = useState<"transfers" | "trending">(
+  const [activeTab, setActiveTab] = useState<"transfers" | "trending" | "devices" | "quality" | "failed">(
     "transfers"
   );
 
   const tabs = [
     { id: "transfers", label: "Live Transfers & Chains" },
     { id: "trending", label: "Trending Videos" },
+    { id: "devices", label: "Device Trust Matrix" },
+    { id: "quality", label: "Connection Quality" },
+    { id: "failed", label: "Failed Transfers" },
   ];
 
   return (
@@ -54,8 +61,11 @@ export default function P2PMonitorPage() {
 
       {/* Content */}
       <div className="glass-card rounded-2xl border-white/10 p-6">
-        {activeTab === "transfers" && <P2PTransferMonitor />}
+        {activeTab === "transfers" && <EnhancedP2PTransferMonitor />}
         {activeTab === "trending" && <TrendingP2PVideos />}
+        {activeTab === "devices" && <DeviceTrustMatrix />}
+        {activeTab === "quality" && <ConnectionQualityMonitor />}
+        {activeTab === "failed" && <FailedTransferAnalytics />}
       </div>
 
       {/* Feature Highlights */}
