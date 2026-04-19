@@ -17,9 +17,11 @@ import { P2PPerformanceTrends } from "@/components/P2PPerformanceTrends";
 import { AnomalyDetectionPanel } from "@/components/AnomalyDetectionPanel";
 import { DeviceDistributionHeatmap } from "@/components/DeviceDistributionHeatmap";
 import { P2PEconomicsDashboard } from "@/components/P2PEconomicsDashboard";
+import { AlertConfigurationPanel } from "@/components/AlertConfigurationPanel";
+import { ReportGeneratorDashboard } from "@/components/ReportGeneratorDashboard";
 
 export default function P2PMonitorPage() {
-  const [activeTab, setActiveTab] = useState<"transfers" | "trending" | "devices" | "quality" | "failed" | "bandwidth" | "compatibility" | "offline" | "bottlenecks" | "trends" | "anomalies" | "distribution" | "economics">(
+  const [activeTab, setActiveTab] = useState<"transfers" | "trending" | "devices" | "quality" | "failed" | "bandwidth" | "compatibility" | "offline" | "bottlenecks" | "trends" | "anomalies" | "distribution" | "economics" | "alerts" | "reports">(
     "transfers"
   );
 
@@ -37,6 +39,8 @@ export default function P2PMonitorPage() {
     { id: "anomalies", label: "Anomaly Detection" },
     { id: "distribution", label: "Device Distribution" },
     { id: "economics", label: "P2P Economics" },
+    { id: "alerts", label: "Alert Configuration" },
+    { id: "reports", label: "Report Generator" },
   ];
 
   return (
@@ -90,6 +94,8 @@ export default function P2PMonitorPage() {
         {activeTab === "anomalies" && <AnomalyDetectionPanel />}
         {activeTab === "distribution" && <DeviceDistributionHeatmap />}
         {activeTab === "economics" && <P2PEconomicsDashboard />}
+        {activeTab === "alerts" && <AlertConfigurationPanel />}
+        {activeTab === "reports" && <ReportGeneratorDashboard />}
       </div>
 
       {/* Feature Highlights */}
