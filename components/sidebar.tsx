@@ -16,6 +16,7 @@ import {
   Power,
   Zap,
   BarChart3,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,7 @@ const menuItems = [
   { icon: BarChart3, label: "Analytics", href: "/analytics" },
   { icon: BookOpen, label: "Catalogue", href: "/catalogue" },
   { icon: Wallet, label: "Finance & Wallet", href: "/finance" },
+  { icon: AlertCircle, label: "Alert Monitoring", href: "/monitoring" },
   { icon: Bell, label: "Dispatch Hub", href: "/notifications" },
   { icon: ShieldCheck, label: "Audit Hub", href: "/audit" },
   { icon: Zap, label: "System Health", href: "/health" },
