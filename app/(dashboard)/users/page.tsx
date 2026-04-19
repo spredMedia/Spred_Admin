@@ -2,24 +2,29 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { 
-  UserPlus, 
-  Search, 
-  Filter, 
-  Shield, 
-  CheckCircle2, 
-  Ban, 
-  Mail, 
-  MoreVertical 
+import {
+  UserPlus,
+  Search,
+  Filter,
+  Shield,
+  CheckCircle2,
+  Ban,
+  Mail,
+  MoreVertical,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ActionModal } from "@/components/ActionModal";
+import { AdvancedSearch } from "@/components/AdvancedSearch";
+import { SmartFilters, userFilterTemplates } from "@/components/SmartFilters";
+import { DataTable } from "@/components/DataTable";
+import { toast } from "@/lib/toast";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentFilters, setCurrentFilters] = useState<Record<string, any>>({});
 
   // Modal State
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
@@ -30,9 +35,12 @@ export default function UsersPage() {
     setLoading(true);
     try {
       const res = await api.getAllUsers();
-      setUsers(Array.isArray(res.data) ? res.data : []);
+      const usersData = Array.isArray(res.data) ? res.data : [];
+      setUsers(usersData);
+      setFilteredUsers(usersData);
     } catch (err) {
       console.error("Failed to load users:", err);
+      toast.error("Failed to load users");
     } finally {
       setLoading(false);
     }
@@ -42,27 +50,79 @@ export default function UsersPage() {
     loadUsers();
   }, []);
 
+  const handleSearch = (query: string, filters: Record<string, any>) => {
+    setCurrentFilters(filters);
+
+    let result = [...users];
+
+    // Apply text search
+    if (query) {
+      result = result.filter(
+        (user) =>
+          `${user.firstName} ${user.lastName}`
+            .toLowerCase()
+            .includes(query.toLowerCase()) ||
+          user.email.toLowerCase().includes(query.toLowerCase()) ||
+          user.username?.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+
+    // Apply filters
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) {
+        switch (key) {
+          case "role":
+            result = result.filter((u) => u.role === value);
+            break;
+          case "status":
+            result = result.filter((u) =>
+              value === "active" ? u.isActive : !u.isActive
+            );
+            break;
+          case "subscription":
+            result = result.filter((u) => u.subscription === value);
+            break;
+        }
+      }
+    });
+
+    setFilteredUsers(result);
+  };
+
   const handleToggleStatus = async () => {
     if (!selectedUser) return;
     setActionLoading(true);
     try {
       const newStatus = !selectedUser.isActive;
       await api.updateUserStatus(selectedUser.id, newStatus);
+      toast.success("User status updated");
       setIsStatusModalOpen(false);
       setSelectedUser(null);
       loadUsers();
     } catch (err: any) {
-      alert(err.message || "Failed to update user status");
+      toast.error("Failed to update user status");
     } finally {
       setActionLoading(false);
     }
   };
 
-  const filteredUsers = users.filter(user => 
-    (user.firstName + " " + user.lastName).toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.username?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleDeleteUsers = async (usersToDelete: any[]) => {
+    const confirmed = confirm(
+      `Delete ${usersToDelete.length} user(s)? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    toast.loading("Deleting users...");
+    try {
+      for (const user of usersToDelete) {
+        await api.deleteUser(user.id);
+      }
+      toast.success(`${usersToDelete.length} user(s) deleted`);
+      loadUsers();
+    } catch (err: any) {
+      toast.error("Failed to delete users");
+    }
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
@@ -94,121 +154,154 @@ export default function UsersPage() {
         ))}
       </div>
 
-      <div className="glass-card rounded-[2rem] border-white/5 overflow-hidden">
-        <div className="p-6 border-b border-white/5 bg-white/[0.02] flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-            <input 
-              type="text" 
-              placeholder="Search by name, email or ID..." 
-              className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-11 pr-4 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 hover:bg-white/5 text-zinc-400 font-bold text-xs transition-all">
-              <Filter className="h-4 w-4" />
-              Detailed Filter
-            </button>
-          </div>
-        </div>
+      {/* Smart Filters */}
+      <SmartFilters
+        templates={userFilterTemplates}
+        onApply={(filters) => handleSearch("", filters)}
+        onClear={() => {
+          handleSearch("", {});
+          setCurrentFilters({});
+        }}
+      />
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-white/[0.02] text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
-                <th className="px-8 py-5">Global Identifier</th>
-                <th className="px-4 py-5">Communication</th>
-                <th className="px-4 py-5">Role/Tier</th>
-                <th className="px-4 py-5">Status</th>
-                <th className="px-4 py-5 text-right">Coordination</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {loading ? (
-                Array(5).fill(0).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td colSpan={5} className="px-8 py-8"><div className="h-4 bg-white/5 rounded w-full" /></td>
-                  </tr>
-                ))
-              ) : filteredUsers.length > 0 ? (
-                filteredUsers.map((user, i) => (
-                  <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-8 py-5">
-                        <Link href={`/users/${user.id}`} className="flex items-center gap-4 hover:opacity-80 transition-opacity">
-                          <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/20 text-primary font-black">
-                            {user.firstName?.[0]}{user.lastName?.[0]}
-                          </div>
-                          <div>
-                            <p className="font-bold text-white leading-tight underline decoration-primary/30 underline-offset-4">{user.firstName} {user.lastName}</p>
-                            <p className="text-[10px] text-zinc-500 mt-1 font-mono tracking-tighter">ID: #{user.id?.slice(0, 8)}</p>
-                          </div>
-                        </Link>
-                    </td>
-                    <td className="px-4 py-5">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2 text-xs text-zinc-300 font-medium">
-                          <Mail className="h-3 w-3 text-zinc-500" />
-                          {user.email}
-                        </div>
-                        <p className="text-[10px] text-zinc-500 font-medium tracking-tight">@{user.username || 'unknown'}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-5">
-                      <span className={cn(
-                        "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all",
-                        user.role === "Admin" ? "bg-primary/20 text-primary border-primary/20 font-black" : "bg-zinc-500/10 text-zinc-500 border-white/5"
-                      )}>
-                        {user.role || "User"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-5">
-                      <div className="flex items-center gap-2">
-                        <div className={cn("h-1.5 w-1.5 rounded-full", user.isActive ? "bg-emerald-500" : "bg-rose-500")} />
-                        <span className={cn("text-xs font-bold", user.isActive ? "text-zinc-200" : "text-rose-500")}>
-                          {user.isActive ? "Active" : "Suspended"}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-5 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button className="p-2 rounded-xl border border-white/10 hover:bg-white/5 text-zinc-500 hover:text-primary transition-all">
-                          <Shield className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setIsStatusModalOpen(true);
-                          }}
-                          className={cn(
-                            "p-2 rounded-xl border border-white/10 transition-all",
-                            user.isActive ? "text-rose-500/30 hover:text-rose-500 hover:bg-rose-500/10" : "text-emerald-500/30 hover:text-emerald-500 hover:bg-emerald-500/10"
-                          )}
-                        >
-                          {user.isActive ? <Ban className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                        </button>
-                        <button className="p-2 rounded-xl border border-white/10 hover:bg-white/5 text-zinc-500 hover:text-white transition-all">
-                          <MoreVertical className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="py-20 text-center">
-                    <div className="flex flex-col items-center gap-4 text-zinc-600">
-                      <Search className="h-12 w-12 opacity-20" />
-                      <p className="font-bold uppercase tracking-[0.2em] text-xs">No personnel found</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* Advanced Search */}
+      <div className="glass-card rounded-xl border-white/10 p-6">
+        <AdvancedSearch
+          onSearch={handleSearch}
+          filterOptions={[
+            {
+              key: "role",
+              label: "Role",
+              type: "select",
+              options: [
+                { label: "Creator", value: "creator" },
+                { label: "User", value: "user" },
+                { label: "Admin", value: "admin" },
+              ],
+            },
+            {
+              key: "status",
+              label: "Status",
+              type: "select",
+              options: [
+                { label: "Active", value: "active" },
+                { label: "Inactive", value: "inactive" },
+              ],
+            },
+            {
+              key: "subscription",
+              label: "Subscription",
+              type: "select",
+              options: [
+                { label: "Free", value: "free" },
+                { label: "Premium", value: "premium" },
+                { label: "Pro", value: "pro" },
+              ],
+            },
+          ]}
+          placeholder="Search users by name, email, or ID..."
+        />
       </div>
+
+      {/* Data Table */}
+      {loading ? (
+        <div className="glass-card rounded-xl border-white/10 p-12 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary mx-auto mb-4"></div>
+            <p className="text-zinc-400">Loading users...</p>
+          </div>
+        </div>
+      ) : (
+        <div className="glass-card rounded-xl border-white/10 p-6">
+          <DataTable
+            data={filteredUsers.map((user) => ({
+              id: user.id,
+              name: `${user.firstName} ${user.lastName}`,
+              email: user.email,
+              role: user.role || "User",
+              status: user.isActive ? "Active" : "Inactive",
+              joinDate: user.createdAt
+                ? new Date(user.createdAt).toLocaleDateString()
+                : "-",
+              subscription: user.subscription || "Free",
+            }))}
+            columns={[
+              {
+                key: "name" as any,
+                label: "Name",
+                sortable: true,
+                render: (value, row) => (
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/20 text-primary font-bold text-sm">
+                      {value?.[0]}
+                    </div>
+                    <div>
+                      <p className="font-medium text-white">{value}</p>
+                    </div>
+                  </div>
+                ),
+              },
+              {
+                key: "email" as any,
+                label: "Email",
+                sortable: true,
+                filterable: true,
+              },
+              {
+                key: "role" as any,
+                label: "Role",
+                sortable: true,
+                filterable: true,
+                render: (value) => (
+                  <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-xs font-bold">
+                    {value}
+                  </span>
+                ),
+              },
+              {
+                key: "status" as any,
+                label: "Status",
+                sortable: true,
+                filterable: true,
+                render: (value) => (
+                  <span
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-bold",
+                      value === "Active"
+                        ? "bg-emerald-500/20 text-emerald-500"
+                        : "bg-rose-500/20 text-rose-500"
+                    )}
+                  >
+                    {value}
+                  </span>
+                ),
+              },
+              {
+                key: "subscription" as any,
+                label: "Plan",
+                sortable: true,
+                filterable: true,
+                render: (value) => (
+                  <span className="text-sm font-medium text-zinc-300">{value}</span>
+                ),
+              },
+              {
+                key: "joinDate" as any,
+                label: "Joined",
+                sortable: true,
+              },
+            ]}
+            onDelete={handleDeleteUsers}
+            onExport={() => toast.success("Exported users data")}
+            onRowSelect={(row) => {
+              const user = users.find(u => u.id === (row as any).id);
+              if (user) setSelectedUser(user);
+            }}
+            selectable
+            title="User Directory"
+          />
+        </div>
+      )}
 
       <ActionModal
         isOpen={isStatusModalOpen}

@@ -36,6 +36,11 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(dashboard)/live/page.js"
     ],
+    "/(dashboard)/catalogue/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(dashboard)/catalogue/page.js"
+    ],
     "/not-found": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",

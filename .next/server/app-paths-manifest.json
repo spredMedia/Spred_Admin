@@ -1,8 +1,8 @@
 {
   "/not-found": "app/not-found.js",
   "/(dashboard)/moderation/page": "app/(dashboard)/moderation/page.js",
-  "/(dashboard)/videos/page": "app/(dashboard)/videos/page.js",
-  "/(dashboard)/page": "app/(dashboard)/page.js",
+  "/(dashboard)/users/page": "app/(dashboard)/users/page.js",
   "/(dashboard)/live/page": "app/(dashboard)/live/page.js",
-  "/(dashboard)/users/page": "app/(dashboard)/users/page.js"
+  "/(dashboard)/page": "app/(dashboard)/page.js",
+  "/(dashboard)/videos/page": "app/(dashboard)/videos/page.js"
 }
