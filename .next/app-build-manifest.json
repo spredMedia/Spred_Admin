@@ -41,6 +41,21 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(dashboard)/catalogue/page.js"
     ],
+    "/(dashboard)/finance/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(dashboard)/finance/page.js"
+    ],
+    "/(dashboard)/notifications/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(dashboard)/notifications/page.js"
+    ],
+    "/(dashboard)/audit/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(dashboard)/audit/page.js"
+    ],
     "/not-found": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",

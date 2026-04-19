@@ -2,19 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Video, 
-  BookOpen, 
-  Bell, 
-  Settings, 
-  Activity, 
+import {
+  LayoutDashboard,
+  Users,
+  Video,
+  BookOpen,
+  Bell,
+  Settings,
+  Activity,
   Wallet,
   ShieldCheck,
   ShieldAlert,
   Power,
-  Zap
+  Zap,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ const menuItems = [
   { icon: ShieldAlert, label: "Moderation Hub", href: "/moderation" },
   { icon: Video, label: "Content Control", href: "/videos" },
   { icon: Activity, label: "Live Monitoring", href: "/live" },
+  { icon: BarChart3, label: "Analytics", href: "/analytics" },
   { icon: BookOpen, label: "Catalogue", href: "/catalogue" },
   { icon: Wallet, label: "Finance & Wallet", href: "/finance" },
   { icon: Bell, label: "Dispatch Hub", href: "/notifications" },

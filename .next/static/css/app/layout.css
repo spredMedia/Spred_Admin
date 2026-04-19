@@ -1118,6 +1118,9 @@ video {
 .flex-\[2\] {
   flex: 2;
 }
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
 .shrink-0 {
   flex-shrink: 0;
 }
@@ -1686,6 +1689,22 @@ video {
 .bg-transparent {
   background-color: transparent;
 }
+.bg-amber-400 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(251 191 36 / var(--tw-bg-opacity, 1));
+}
+.bg-emerald-400 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(52 211 153 / var(--tw-bg-opacity, 1));
+}
+.bg-rose-400 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(251 113 133 / var(--tw-bg-opacity, 1));
+}
+.bg-zinc-700 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(63 63 70 / var(--tw-bg-opacity, 1));
+}
 .bg-\[linear-gradient\(to_right\2c \#80808012_1px\2c transparent_1px\)\2c linear-gradient\(to_bottom\2c \#80808012_1px\2c transparent_1px\)\] {
   background-image: linear-gradient(to right,#80808012 1px,transparent 1px),linear-gradient(to bottom,#80808012 1px,transparent 1px);
 }
@@ -1783,6 +1802,9 @@ video {
 }
 .to-white\/5 {
   --tw-gradient-to: rgb(255 255 255 / 0.05) var(--tw-gradient-to-position);
+}
+.to-amber-500\/5 {
+  --tw-gradient-to: rgb(245 158 11 / 0.05) var(--tw-gradient-to-position);
 }
 .bg-\[length\:10px_10px\] {
   background-size: 10px 10px;
@@ -1969,6 +1991,9 @@ video {
 }
 .pt-8 {
   padding-top: 2rem;
+}
+.pt-3 {
+  padding-top: 0.75rem;
 }
 .text-left {
   text-align: left;
@@ -2201,6 +2226,9 @@ video {
 .text-primary\/60 {
   color: hsl(var(--primary) / 0.6);
 }
+.text-white\/60 {
+  color: rgb(255 255 255 / 0.6);
+}
 .underline {
   text-decoration-line: underline;
 }
@@ -2247,6 +2275,12 @@ video {
 }
 .opacity-75 {
   opacity: 0.75;
+}
+.opacity-80 {
+  opacity: 0.8;
+}
+.opacity-50 {
+  opacity: 0.5;
 }
 .shadow-2xl {
   --tw-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
@@ -2795,6 +2829,10 @@ video {
   opacity: 0.8;
 }
 
+.hover\:opacity-70:hover {
+  opacity: 0.7;
+}
+
 .hover\:shadow-2xl:hover {
   --tw-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
   --tw-shadow-colored: 0 25px 50px -12px var(--tw-shadow-color);
@@ -3044,6 +3082,10 @@ video {
 
   .md\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .md\:flex-row {
