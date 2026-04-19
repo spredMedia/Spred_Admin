@@ -36,6 +36,7 @@ const menuItems = [
   { icon: AlertCircle, label: "Alert Monitoring", href: "/monitoring" },
   { icon: Bell, label: "Dispatch Hub", href: "/notifications" },
   { icon: ShieldCheck, label: "Audit Hub", href: "/audit" },
+  { icon: Zap, label: "P2P Monitor", href: "/p2p-monitor" },
   { icon: Zap, label: "Integrations", href: "/integrations" },
   { icon: Zap, label: "System Health", href: "/health" },
   { icon: Settings2, label: "Customization", href: "/customization" },
