@@ -13,9 +13,11 @@ import { BandwidthUtilizationMonitor } from "@/components/BandwidthUtilizationMo
 import { DeviceCompatibilityMatrix } from "@/components/DeviceCompatibilityMatrix";
 import { OfflineCapabilityTracker } from "@/components/OfflineCapabilityTracker";
 import { NetworkBottleneckIdentifier } from "@/components/NetworkBottleneckIdentifier";
+import { P2PPerformanceTrends } from "@/components/P2PPerformanceTrends";
+import { AnomalyDetectionPanel } from "@/components/AnomalyDetectionPanel";
 
 export default function P2PMonitorPage() {
-  const [activeTab, setActiveTab] = useState<"transfers" | "trending" | "devices" | "quality" | "failed" | "bandwidth" | "compatibility" | "offline" | "bottlenecks">(
+  const [activeTab, setActiveTab] = useState<"transfers" | "trending" | "devices" | "quality" | "failed" | "bandwidth" | "compatibility" | "offline" | "bottlenecks" | "trends" | "anomalies">(
     "transfers"
   );
 
@@ -29,6 +31,8 @@ export default function P2PMonitorPage() {
     { id: "compatibility", label: "Device Compatibility" },
     { id: "offline", label: "Offline Capability" },
     { id: "bottlenecks", label: "Network Bottlenecks" },
+    { id: "trends", label: "Performance Trends" },
+    { id: "anomalies", label: "Anomaly Detection" },
   ];
 
   return (
@@ -78,6 +82,8 @@ export default function P2PMonitorPage() {
         {activeTab === "compatibility" && <DeviceCompatibilityMatrix />}
         {activeTab === "offline" && <OfflineCapabilityTracker />}
         {activeTab === "bottlenecks" && <NetworkBottleneckIdentifier />}
+        {activeTab === "trends" && <P2PPerformanceTrends />}
+        {activeTab === "anomalies" && <AnomalyDetectionPanel />}
       </div>
 
       {/* Feature Highlights */}
