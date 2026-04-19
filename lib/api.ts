@@ -410,6 +410,17 @@ class SpredApiService {
     return this.request<any>('/intelligence/viral-velocity');
   }
 
+  /**
+   * P2P ECONOMICS & SETTLEMENTS
+   */
+  async getP2PEconomicsStats() {
+    return this.request<any>('/p2p/economics/stats');
+  }
+
+  async getTopMeshEarners() {
+    return this.request<any[]>('/p2p/economics/top-earners');
+  }
+
   // --- CONTENT INGESTION (PHASE 12) ---
   async ingestContent(formData: FormData, onProgress?: (percent: number) => void) {
     if (API_CONFIG.DEMO_MODE) {

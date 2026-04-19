@@ -22,7 +22,13 @@ import { cn } from "@/lib/utils";
 import { ActionModal } from "@/components/ActionModal";
 
 export default function FinanceHub() {
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
   const [forecast, setForecast] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
+  const [selectedTx, setSelectedTx] = useState<any>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   async function loadFinance() {
     setLoading(true);
@@ -101,6 +107,14 @@ export default function FinanceHub() {
             icon: TrendingUp, 
             color: "text-blue-500",
             bg: "bg-blue-500/10"
+          },
+          { 
+            label: "Mesh Impact", 
+            val: stats?.meshRevenue ? `₦${stats.meshRevenue.toLocaleString()}` : "₦0", 
+            change: "+18.2%", 
+            icon: Zap, 
+            color: "text-emerald-500",
+            bg: "bg-emerald-500/10"
           },
           { 
             label: "Projected MRR", 

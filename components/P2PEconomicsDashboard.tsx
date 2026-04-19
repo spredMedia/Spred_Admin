@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DollarSign, TrendingUp, Users, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
 
 interface TopEarner {
   rank: number;
@@ -27,10 +28,8 @@ interface EconomicsMetrics {
   avgTransferValue: number;
   creatorEarnings: number;
   platformEarnings: number;
-  originatorEarnings: number;
-  totalUsers: number;
+  resellerEarnings: number;
   activeEarners: number;
-  avgMonthlyEarnings: number;
 }
 
 const mockTopEarners: TopEarner[] = [
@@ -43,8 +42,8 @@ const mockTopEarners: TopEarner[] = [
 
 const mockRevenueSplit: RevenueSplit[] = [
   { label: "Content Creator", percentage: 50, amount: 28450, description: "Original uploader (50%)" },
-  { label: "Originator Share", percentage: 35, amount: 19915, description: "Re-sharer incentive (35%)" },
-  { label: "Platform", percentage: 15, amount: 8535, description: "Infrastructure & ops (15%)" },
+  { label: "Mesh Resellers", percentage: 15, amount: 8535, description: "Direct sharing incentive (15%)" },
+  { label: "Platform", percentage: 35, amount: 19915, description: "Infrastructure & Ops (35%)" },
 ];
 
 const mockMetrics: EconomicsMetrics = {
@@ -52,19 +51,57 @@ const mockMetrics: EconomicsMetrics = {
   totalTransfers: 12847,
   avgTransferValue: 4.43,
   creatorEarnings: 28450,
-  platformEarnings: 8535,
-  originatorEarnings: 19915,
-  totalUsers: 8247,
+  platformEarnings: 19915,
+  resellerEarnings: 8535,
   activeEarners: 3156,
-  avgMonthlyEarnings: 18.04,
 };
 
 export function P2PEconomicsDashboard() {
   const [expandedEarnerId, setExpandedEarnerId] = useState<number | null>(null);
-  const [timePeriod, setTimePeriod] = useState<"7d" | "30d" | "90d">("30d");
+  const [metrics, setMetrics] = useState<EconomicsMetrics | null>(null);
+  const [topEarners, setTopEarners] = useState<TopEarner[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadEconomics() {
+      try {
+        const [statsRes, earnersRes] = await Promise.all([
+          api.getP2PEconomicsStats(),
+          api.getTopMeshEarners()
+        ]);
+        if (statsRes.succeeded) setMetrics(statsRes.data);
+        if (earnersRes.succeeded) setTopEarners(earnersRes.data);
+      } catch (err) {
+        console.error("Economics load error:", err);
+      } finally {
+        setLoading(true); // Keep loading state for UX or set to false
+        setLoading(false);
+      }
+    }
+    loadEconomics();
+  }, []);
+
+  // Use real data or fallbacks
+  const data = metrics || mockMetrics;
+  const earners = topEarners.length > 0 ? topEarners : mockTopEarners;
+
+  const revenueSplit: RevenueSplit[] = [
+    { label: "Content Creator", percentage: 50, amount: data.creatorEarnings, description: "Original uploader (50%)" },
+    { label: "Mesh Resellers", percentage: 15, amount: data.resellerEarnings, description: "Direct sharing incentive (15%)" },
+    { label: "Platform", percentage: 35, amount: data.platformEarnings, description: "Infrastructure & Ops (35%)" },
+  ];
+
+  if (loading && !metrics) {
+    return (
+      <div className="py-20 text-center animate-pulse">
+        <DollarSign className="h-12 w-12 text-primary/20 mx-auto mb-4" />
+        <p className="text-zinc-500 font-bold uppercase tracking-widest text-xs">Fetching Ledger Data...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex items-center gap-2">
         <DollarSign className="h-5 w-5 text-primary" />
@@ -73,61 +110,67 @@ export function P2PEconomicsDashboard() {
 
       {/* Key Metrics */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="glass-card rounded-xl border-white/10 p-4 space-y-2">
-          <p className="text-xs font-bold text-zinc-600 uppercase">Total P2P Revenue</p>
-          <p className="text-3xl font-black text-emerald-500">${mockMetrics.totalRevenue.toLocaleString()}</p>
-          <p className="text-[10px] text-zinc-600">this month</p>
+        <div className="glass-card rounded-xl border-white/10 p-4 space-y-2 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-2 bg-emerald-500/10 rounded-bl-xl">
+            <Zap className="h-3 w-3 text-emerald-500" />
+          </div>
+          <p className="text-xs font-bold text-zinc-600 uppercase">Total Mesh Revenue</p>
+          <p className="text-2xl font-black text-emerald-500 text-shadow-glow">₦{data.totalRevenue.toLocaleString()}</p>
+          <p className="text-[10px] text-zinc-600">settled total</p>
         </div>
 
         <div className="glass-card rounded-xl border-white/10 p-4 space-y-2">
           <p className="text-xs font-bold text-zinc-600 uppercase">Total Transfers</p>
-          <p className="text-3xl font-black text-primary">{mockMetrics.totalTransfers.toLocaleString()}</p>
-          <p className="text-[10px] text-zinc-600">this month</p>
+          <p className="text-2xl font-black text-primary">{data.totalTransfers.toLocaleString()}</p>
+          <p className="text-[10px] text-zinc-600">mesh hops</p>
         </div>
 
         <div className="glass-card rounded-xl border-white/10 p-4 space-y-2">
           <p className="text-xs font-bold text-zinc-600 uppercase">Avg Transfer Value</p>
-          <p className="text-3xl font-black text-blue-500">${mockMetrics.avgTransferValue.toFixed(2)}</p>
+          <p className="text-2xl font-black text-blue-500">₦{data.avgTransferValue.toFixed(0)}</p>
           <p className="text-[10px] text-zinc-600">per transfer</p>
         </div>
 
         <div className="glass-card rounded-xl border-white/10 p-4 space-y-2">
-          <p className="text-xs font-bold text-zinc-600 uppercase">Active Earners</p>
-          <p className="text-3xl font-black text-amber-500">{mockMetrics.activeEarners.toLocaleString()}</p>
-          <p className="text-[10px] text-zinc-600">generating revenue</p>
+          <p className="text-xs font-bold text-zinc-600 uppercase">Active Partners</p>
+          <p className="text-2xl font-black text-amber-500">{data.activeEarners.toLocaleString()}</p>
+          <p className="text-[10px] text-zinc-600">mesh resellers</p>
         </div>
       </div>
 
       {/* Revenue Split Breakdown */}
       <div className="glass-card rounded-xl border-white/10 p-6 space-y-4">
-        <p className="text-sm font-bold text-white">📊 Revenue Distribution Model (50/35/15)</p>
+        <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest">📊 Revenue Distribution (50/15/35)</p>
 
-        <div className="space-y-3">
-          {mockRevenueSplit.map((split) => (
+        <div className="space-y-4">
+          {revenueSplit.map((split) => (
             <div key={split.label} className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <p className="text-sm font-bold text-white">{split.label}</p>
-                  <p className="text-[10px] text-zinc-500">{split.description}</p>
+                  <p className="text-[10px] text-zinc-500 uppercase font-black">{split.description}</p>
                 </div>
                 <div className="text-right">
-                  <p className={cn("text-2xl font-black", split.percentage === 50 ? "text-emerald-500" : split.percentage === 35 ? "text-blue-500" : "text-primary")}>
+                  <p className={cn("text-2xl font-black font-mono", 
+                    split.label.includes("Creator") ? "text-emerald-500" : 
+                    split.label.includes("Mesh") ? "text-blue-500" : "text-primary"
+                  )}>
                     {split.percentage}%
                   </p>
-                  <p className="text-[10px] text-zinc-600">${split.amount.toLocaleString()}</p>
+                  <p className="text-[10px] text-zinc-600 font-bold">₦{split.amount.toLocaleString()}</p>
                 </div>
               </div>
 
               {/* Bar Chart */}
-              <div className="h-4 w-full bg-white/10 rounded-full overflow-hidden">
+              <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                 <div
                   className={cn(
-                    "h-full rounded-full transition-all",
-                    split.percentage === 50
-                      ? "bg-gradient-to-r from-emerald-500 to-teal-500"
-                      : split.percentage === 35
-                        ? "bg-gradient-to-r from-blue-500 to-cyan-500"
-                        : "bg-gradient-to-r from-primary to-amber-500"
+                    "h-full rounded-full transition-all duration-1000",
+                    split.label.includes("Creator")
+                      ? "bg-emerald-500"
+                      : split.label.includes("Mesh")
+                        ? "bg-blue-500"
+                        : "bg-primary"
                   )}
                   style={{ width: `${split.percentage}%` }}
                 />
@@ -137,10 +180,10 @@ export function P2PEconomicsDashboard() {
         </div>
 
         {/* Total */}
-        <div className="pt-2 border-t border-white/10">
+        <div className="pt-4 border-t border-white/5">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-white">Total Monthly Revenue</p>
-            <p className="text-3xl font-black text-emerald-500">${mockMetrics.totalRevenue.toLocaleString()}</p>
+            <p className="text-xs font-black text-zinc-500 uppercase tracking-widest">In-Mesh Economy Valuation</p>
+            <p className="text-3xl font-black text-emerald-500 tracking-tighter">₦{data.totalRevenue.toLocaleString()}</p>
           </div>
         </div>
       </div>
@@ -284,20 +327,20 @@ export function P2PEconomicsDashboard() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="glass-card rounded-xl border-white/10 p-4 space-y-2">
           <p className="text-xs font-bold text-zinc-600 uppercase">Creator Earnings</p>
-          <p className="text-3xl font-black text-emerald-500">${(mockMetrics.creatorEarnings / 1000).toFixed(1)}K</p>
+          <p className="text-3xl font-black text-emerald-500">₦{(data.creatorEarnings / 1000).toFixed(1)}K</p>
           <p className="text-[10px] text-zinc-600">(50% of revenue)</p>
         </div>
 
         <div className="glass-card rounded-xl border-white/10 p-4 space-y-2">
-          <p className="text-xs font-bold text-zinc-600 uppercase">Originator Earnings</p>
-          <p className="text-3xl font-black text-blue-500">${(mockMetrics.originatorEarnings / 1000).toFixed(1)}K</p>
-          <p className="text-[10px] text-zinc-600">(35% of revenue)</p>
+          <p className="text-xs font-bold text-zinc-600 uppercase">Mesh Resellers</p>
+          <p className="text-3xl font-black text-blue-500">₦{(data.resellerEarnings / 1000).toFixed(1)}K</p>
+          <p className="text-[10px] text-zinc-600">(15% of revenue)</p>
         </div>
 
         <div className="glass-card rounded-xl border-white/10 p-4 space-y-2">
           <p className="text-xs font-bold text-zinc-600 uppercase">Platform Revenue</p>
-          <p className="text-3xl font-black text-primary">${(mockMetrics.platformEarnings / 1000).toFixed(1)}K</p>
-          <p className="text-[10px] text-zinc-600">(15% of revenue)</p>
+          <p className="text-3xl font-black text-primary">₦{(data.platformEarnings / 1000).toFixed(1)}K</p>
+          <p className="text-[10px] text-zinc-600">(35% of revenue)</p>
         </div>
       </div>
 

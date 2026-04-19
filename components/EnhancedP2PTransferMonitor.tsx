@@ -12,6 +12,7 @@ import {
   Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
 
 interface P2PTransfer {
   id: string;
@@ -25,6 +26,10 @@ interface P2PTransfer {
   estimatedTime?: number;
   encryptionEnabled: boolean;
   deviceTrustScore: number;
+  isVerified?: boolean;
+  verificationError?: string;
+  originatorId?: string;
+  chainDepth?: number;
 }
 
 interface SharingChain {
@@ -139,14 +144,78 @@ const formatBytes = (bytes: number) => {
 };
 
 export function EnhancedP2PTransferMonitor({
-  transfers = mockTransfers,
-  stats = mockStats,
-  sharingChains = [],
   onTransferClick,
+  stats,
+  transfers = [],
 }: EnhancedP2PTransferMonitorProps) {
   const [expandedTransferId, setExpandedTransferId] = useState<string | null>(null);
+  const [realStats, setRealStats] = useState<P2PStats>(stats || {
+    activeTransfers: 0,
+    totalTransfersToday: 0,
+    totalDataTransferred: 0,
+    averageSpeed: 0,
+    successRate: 0,
+    encryptedTransfers: 0,
+    trustedDeviceCount: 0
+  });
+  const [realTransfers, setRealTransfers] = useState<P2PTransfer[]>(transfers);
+  const [loading, setLoading] = useState(true);
 
-  const encryptionPercentage = ((stats.encryptedTransfers / stats.totalTransfersToday) * 100).toFixed(1);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsRes, nodesRes, auditRes] = await Promise.all([
+          fetch('/api/p2p/metrics').then(res => res.json()),
+          fetch('/api/p2p/nodes/trust').then(res => res.json()),
+          fetch('/api/admin/p2p/audit').then(res => res.json())
+        ]);
+
+        if (statsRes.succeeded) {
+          setRealStats(prev => ({
+            ...prev,
+            activeTransfers: statsRes.data.activeNodes,
+            totalTransfersToday: statsRes.data.hourlyTransfers * 24, // Approximation
+            totalDataTransferred: parseFloat(statsRes.data.globalBandwidth) * 1024,
+            trustedDeviceCount: statsRes.data.activeNodes // Approximation
+          }));
+        }
+
+        if (auditRes.succeeded && auditRes.data) {
+          // Map backend P2P logs to P2PTransfer UI components
+          const mappedTransfers: P2PTransfer[] = auditRes.data.map((log: any) => ({
+            id: log.TransferId,
+            fromUser: { id: log.SenderId, name: log.SenderId.substring(0, 8), avatar: 'U' },
+            toUser: { id: log.ReceiverId, name: log.ReceiverId.substring(0, 8), avatar: 'U' },
+            video: { id: log.ContentId, title: `Content ${log.ContentId.substring(0, 6)}`, size: parseInt(log.FileSize) || 0 },
+            status: log.Status === 'completed' ? 'completed' : log.Status === 'failed' ? 'failed' : 'in-progress',
+            progress: log.Status === 'completed' ? 100 : 50,
+            speed: parseFloat(log.TransferSpeed) || 0,
+            startTime: new Date(log.CreatedAt),
+            encryptionEnabled: log.EncryptionEnabled,
+            deviceTrustScore: log.IsVerified ? 10 : log.VerificationError ? 2 : 7,
+            isVerified: log.IsVerified,
+            verificationError: log.VerificationError,
+            originatorId: log.OriginatorId,
+            chainDepth: log.ChainDepth
+          }));
+          setRealTransfers(mappedTransfers);
+        }
+      } catch (e) {
+        console.error("❌ [P2P Monitor] Fetch failed:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 10000); // Poll every 10s
+    return () => clearInterval(interval);
+  }, []);
+
+  const currentStats = realStats;
+  const currentTransfers = realTransfers;
+
+  const encryptionPercentage = ((currentStats.encryptedTransfers / currentStats.totalTransfersToday) * 100).toFixed(1);
 
   return (
     <div className="space-y-8">
@@ -160,31 +229,31 @@ export function EnhancedP2PTransferMonitor({
       <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-7">
         <div className="glass-card rounded-xl border-white/10 p-4 space-y-2">
           <p className="text-xs font-bold text-zinc-600 uppercase">Active Transfers</p>
-          <p className="text-3xl font-black text-primary">{stats.activeTransfers}</p>
+          <p className="text-3xl font-black text-primary">{currentStats.activeTransfers}</p>
           <p className="text-[10px] text-zinc-600">in progress</p>
         </div>
 
         <div className="glass-card rounded-xl border-white/10 p-4 space-y-2">
           <p className="text-xs font-bold text-zinc-600 uppercase">Today's Transfers</p>
-          <p className="text-3xl font-black text-emerald-500">{stats.totalTransfersToday}</p>
+          <p className="text-3xl font-black text-emerald-500">{currentStats.totalTransfersToday}</p>
           <p className="text-[10px] text-zinc-600">completed</p>
         </div>
 
         <div className="glass-card rounded-xl border-white/10 p-4 space-y-2">
           <p className="text-xs font-bold text-zinc-600 uppercase">Data Transferred</p>
-          <p className="text-3xl font-black text-blue-500">{formatBytes(stats.totalDataTransferred * 1024 * 1024)}</p>
+          <p className="text-3xl font-black text-blue-500">{formatBytes(currentStats.totalDataTransferred * 1024 * 1024)}</p>
           <p className="text-[10px] text-zinc-600">today</p>
         </div>
 
         <div className="glass-card rounded-xl border-white/10 p-4 space-y-2">
           <p className="text-xs font-bold text-zinc-600 uppercase">Avg Speed</p>
-          <p className="text-3xl font-black text-amber-500">{stats.averageSpeed}</p>
+          <p className="text-3xl font-black text-amber-500">{currentStats.averageSpeed}</p>
           <p className="text-[10px] text-zinc-600">MB/s</p>
         </div>
 
         <div className="glass-card rounded-xl border-white/10 p-4 space-y-2">
           <p className="text-xs font-bold text-zinc-600 uppercase">Success Rate</p>
-          <p className="text-3xl font-black text-emerald-500">{stats.successRate}%</p>
+          <p className="text-3xl font-black text-emerald-500">{currentStats.successRate}%</p>
           <p className="text-[10px] text-zinc-600">transfers</p>
         </div>
 
@@ -196,7 +265,7 @@ export function EnhancedP2PTransferMonitor({
 
         <div className="glass-card rounded-xl border-white/10 p-4 space-y-2">
           <p className="text-xs font-bold text-zinc-600 uppercase">Trusted Devices</p>
-          <p className="text-3xl font-black text-blue-500">{stats.trustedDeviceCount}</p>
+          <p className="text-3xl font-black text-blue-500">{currentStats.trustedDeviceCount}</p>
           <p className="text-[10px] text-zinc-600">verified</p>
         </div>
       </div>
@@ -209,7 +278,7 @@ export function EnhancedP2PTransferMonitor({
         </div>
 
         <div className="space-y-3">
-          {transfers
+          {currentTransfers
             .filter(t => t.status !== "completed")
             .map((transfer) => (
               <div key={transfer.id} className="space-y-2">
@@ -244,6 +313,21 @@ export function EnhancedP2PTransferMonitor({
                           <span className="text-[10px] font-bold px-2 py-1 rounded bg-blue-500/20 text-blue-500 border border-blue-500/30 flex items-center gap-1">
                             <Lock className="h-3 w-3" />
                             Encrypted
+                          </span>
+                        )}
+                        {transfer.status === "completed" && transfer.isVerified && (
+                          <span className="text-[10px] font-bold px-2 py-1 rounded bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 flex items-center gap-1">
+                            🛡️ Secure Identity
+                          </span>
+                        )}
+                        {transfer.status === "completed" && transfer.isVerified === false && (
+                          <span className="text-[10px] font-bold px-2 py-1 rounded bg-rose-500/20 text-rose-500 border border-rose-500/30 flex items-center gap-1">
+                            ⚠️ Tampered
+                          </span>
+                        )}
+                        {transfer.chainDepth !== undefined && (
+                          <span className="text-[10px] font-bold px-2 py-1 rounded bg-amber-500/10 text-amber-500 border border-amber-500/30 flex items-center gap-1">
+                            ⚡ Hop {transfer.chainDepth}
                           </span>
                         )}
                         <span
@@ -328,9 +412,18 @@ export function EnhancedP2PTransferMonitor({
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
+                            <div className={cn(
+                              "w-2 h-2 rounded-full",
+                              transfer.isVerified ? "bg-emerald-500" : transfer.verificationError ? "bg-rose-500" : "bg-zinc-500"
+                            )} />
+                            <span className="text-zinc-400">
+                              Integrity Audit: {transfer.isVerified ? "SHA-256 Bit-Identical ✓" : transfer.verificationError ? `Verification Failed: ${transfer.verificationError} ✗` : "Audit Pending..."}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-emerald-500" />
                             <span className="text-zinc-400">
-                              Receiver verified & trusted device
+                              Identity Proof: {transfer.isVerified ? "Creator Origin Confirmed" : "Authentication Unconfirmed"}
                             </span>
                           </div>
                         </div>
@@ -360,6 +453,22 @@ export function EnhancedP2PTransferMonitor({
                               {transfer.startTime.toLocaleTimeString()}
                             </span>
                           </div>
+                          
+                          {/* ✨ NEW: Viral Lineage Info */}
+                          <div className="pt-2 mt-2 border-t border-white/5 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-zinc-600">Viral Originator:</span>
+                              <span className="font-bold text-amber-500 uppercase">
+                                {transfer.originatorId?.substring(0, 12) || 'Direct'}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-zinc-600">Distribution Depth:</span>
+                              <span className="font-bold text-zinc-400">
+                                {transfer.chainDepth || 1} Hops from Origin
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -379,6 +488,7 @@ export function EnhancedP2PTransferMonitor({
           <li>📊 Real-time Speed: Actual MB/s from network interface monitoring</li>
           <li>⏱️ ETA Calculation: Based on file size and current transfer speed</li>
           <li>✅ Trusted Device Count: Only verified devices participate in transfers</li>
+          <li>🛡️ Cryptographic Integrity: Real-time SHA-256 audits detect tampered or corrupted media flows</li>
         </ul>
       </div>
     </div>

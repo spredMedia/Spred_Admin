@@ -28,6 +28,7 @@ export default function UsersPage() {
 
   // Modal State
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isTierModalOpen, setIsTierModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -89,6 +90,22 @@ export default function UsersPage() {
     setFilteredUsers(result);
   };
 
+  const handleUpdateTier = async (tier: 'silver' | 'gold' | 'platinum') => {
+    if (!selectedUser) return;
+    setActionLoading(true);
+    try {
+      await api.updateCreatorTier(selectedUser.id, tier);
+      toast.success(`User promoted to ${tier.toUpperCase()} tier`);
+      setIsTierModalOpen(false);
+      setSelectedUser(null);
+      loadUsers();
+    } catch (err: any) {
+      toast.error("Failed to update verification tier");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleToggleStatus = async () => {
     if (!selectedUser) return;
     setActionLoading(true);
@@ -96,7 +113,7 @@ export default function UsersPage() {
       const newStatus = !selectedUser.isActive;
       await api.updateUserStatus(selectedUser.id, newStatus);
       toast.success("User status updated");
-      setIsStatusModalOpen(false);
+      setIsTierModalOpen(false);
       setSelectedUser(null);
       loadUsers();
     } catch (err: any) {
@@ -220,6 +237,7 @@ export default function UsersPage() {
               email: user.email,
               role: user.role || "User",
               status: user.isActive ? "Active" : "Inactive",
+              tier: user.tier || "unverified",
               joinDate: user.createdAt
                 ? new Date(user.createdAt).toLocaleDateString()
                 : "-",
@@ -277,6 +295,25 @@ export default function UsersPage() {
                 ),
               },
               {
+                key: "tier" as any,
+                label: "Tier",
+                sortable: true,
+                filterable: true,
+                render: (value) => {
+                  const colors: Record<string, string> = {
+                    platinum: "bg-amber-500/20 text-amber-500 border border-amber-500/50",
+                    gold: "bg-yellow-500/20 text-yellow-500",
+                    silver: "bg-zinc-400/20 text-zinc-400",
+                    unverified: "bg-zinc-800 text-zinc-500"
+                  };
+                  return (
+                    <span className={cn("px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider", colors[value] || colors.unverified)}>
+                      {value}
+                    </span>
+                  );
+                }
+              },
+              {
                 key: "subscription" as any,
                 label: "Plan",
                 sortable: true,
@@ -295,7 +332,10 @@ export default function UsersPage() {
             onExport={() => toast.success("Exported users data")}
             onRowSelect={(row) => {
               const user = users.find(u => u.id === (row as any).id);
-              if (user) setSelectedUser(user);
+              if (user) {
+                setSelectedUser(user);
+                setIsTierModalOpen(true);
+              }
             }}
             selectable
             title="User Directory"
@@ -304,18 +344,51 @@ export default function UsersPage() {
       )}
 
       <ActionModal
-        isOpen={isStatusModalOpen}
-        onClose={() => setIsStatusModalOpen(false)}
-        onConfirm={handleToggleStatus}
-        title={selectedUser?.isActive ? "Suspend Character" : "Activate Character"}
-        description={selectedUser?.isActive 
-          ? `Are you sure you want to suspend ${selectedUser.firstName}? This will revoke their platform access immediately.`
-          : `Restoring access for ${selectedUser?.firstName}. They will regain all platform privileges.`
-        }
-        confirmLabel={selectedUser?.isActive ? "Terminate Access" : "Restore Access"}
-        variant={selectedUser?.isActive ? "danger" : "success"}
+        isOpen={isTierModalOpen}
+        onClose={() => setIsTierModalOpen(false)}
+        onConfirm={() => {}} // Not used as we have custom buttons
+        title="Manage Institutional Access"
+        description={`Set verification tier for ${selectedUser?.firstName} ${selectedUser?.lastName}. This affects their platform badges and player watermarks.`}
+        confirmLabel="Close"
+        variant="primary"
         loading={actionLoading}
-      />
+      >
+        <div className="grid grid-cols-1 gap-3 mt-4">
+          {[
+            { id: 'platinum', label: 'Platinum (Institutional Master)', icon: Shield, color: 'text-amber-500', desc: 'Watermarks + Gold Badge + Official Tab' },
+            { id: 'gold', label: 'Gold (Verified Partner)', icon: Shield, color: 'text-yellow-500', desc: 'Gold Badge + Priority Search' },
+            { id: 'silver', label: 'Silver (Verified Creator)', icon: CheckCircle2, color: 'text-zinc-400', desc: 'Silver Badge only' },
+          ].map((tier) => (
+            <button
+              key={tier.id}
+              onClick={() => handleUpdateTier(tier.id as any)}
+              className={cn(
+                "flex items-start gap-3 p-3 rounded-xl border border-white/5 transition-all text-left group",
+                selectedUser?.tier === tier.id ? "bg-primary/20 border-primary/50" : "hover:bg-white/5"
+              )}
+            >
+              <tier.icon className={cn("h-5 w-5 mt-0.5", tier.color)} />
+              <div>
+                <p className="text-sm font-bold text-white group-hover:text-primary transition-colors">{tier.label}</p>
+                <p className="text-[10px] text-zinc-500">{tier.desc}</p>
+              </div>
+            </button>
+          ))}
+          
+          <button
+            onClick={handleToggleStatus}
+            className={cn(
+              "flex items-center justify-center gap-2 p-3 mt-2 rounded-xl border font-bold text-sm transition-all",
+              selectedUser?.isActive 
+                ? "bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500/20" 
+                : "bg-emerald-500/10 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/20"
+            )}
+          >
+            {selectedUser?.isActive ? <Ban className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+            {selectedUser?.isActive ? "Suspend Access" : "Restore Access"}
+          </button>
+        </div>
+      </ActionModal>
     </div>
   );
 }
