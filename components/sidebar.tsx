@@ -17,6 +17,7 @@ import {
   Zap,
   BarChart3,
   AlertCircle,
+  Settings2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,7 @@ const menuItems = [
   { icon: ShieldCheck, label: "Audit Hub", href: "/audit" },
   { icon: Zap, label: "Integrations", href: "/integrations" },
   { icon: Zap, label: "System Health", href: "/health" },
+  { icon: Settings2, label: "Customization", href: "/customization" },
 ];
 
 export function Sidebar() {
