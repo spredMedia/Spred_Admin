@@ -15,9 +15,11 @@ import { OfflineCapabilityTracker } from "@/components/OfflineCapabilityTracker"
 import { NetworkBottleneckIdentifier } from "@/components/NetworkBottleneckIdentifier";
 import { P2PPerformanceTrends } from "@/components/P2PPerformanceTrends";
 import { AnomalyDetectionPanel } from "@/components/AnomalyDetectionPanel";
+import { DeviceDistributionHeatmap } from "@/components/DeviceDistributionHeatmap";
+import { P2PEconomicsDashboard } from "@/components/P2PEconomicsDashboard";
 
 export default function P2PMonitorPage() {
-  const [activeTab, setActiveTab] = useState<"transfers" | "trending" | "devices" | "quality" | "failed" | "bandwidth" | "compatibility" | "offline" | "bottlenecks" | "trends" | "anomalies">(
+  const [activeTab, setActiveTab] = useState<"transfers" | "trending" | "devices" | "quality" | "failed" | "bandwidth" | "compatibility" | "offline" | "bottlenecks" | "trends" | "anomalies" | "distribution" | "economics">(
     "transfers"
   );
 
@@ -33,6 +35,8 @@ export default function P2PMonitorPage() {
     { id: "bottlenecks", label: "Network Bottlenecks" },
     { id: "trends", label: "Performance Trends" },
     { id: "anomalies", label: "Anomaly Detection" },
+    { id: "distribution", label: "Device Distribution" },
+    { id: "economics", label: "P2P Economics" },
   ];
 
   return (
@@ -84,6 +88,8 @@ export default function P2PMonitorPage() {
         {activeTab === "bottlenecks" && <NetworkBottleneckIdentifier />}
         {activeTab === "trends" && <P2PPerformanceTrends />}
         {activeTab === "anomalies" && <AnomalyDetectionPanel />}
+        {activeTab === "distribution" && <DeviceDistributionHeatmap />}
+        {activeTab === "economics" && <P2PEconomicsDashboard />}
       </div>
 
       {/* Feature Highlights */}
