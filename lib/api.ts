@@ -447,8 +447,8 @@ class SpredApiService {
   }
 
   // --- EMERGENCY PROTOCOLS (PHASE 13) ---
-  async sendGlobalBroadcast(payload: { header: string, body: string, actionUrl?: string, type: string }) {
-    return this.request<any>('/system/broadcast', {
+  async sendGlobalBroadcast(payload: { title: string, message: string, targetAudience: string, priority: string }) {
+    return this.request<any>('/dispatch/broadcast', {
       method: 'POST',
       body: JSON.stringify(payload)
     });

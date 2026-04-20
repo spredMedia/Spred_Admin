@@ -26,10 +26,10 @@ export function BroadcastModal({ isOpen, onClose }: BroadcastModalProps) {
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    header: "",
-    body: "",
-    actionUrl: "",
-    type: "Emergency"
+    title: "",
+    message: "",
+    targetAudience: "Global",
+    priority: "High"
   });
 
   if (!isOpen) return null;
@@ -86,8 +86,8 @@ export function BroadcastModal({ isOpen, onClose }: BroadcastModalProps) {
                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Announcement Header</label>
                  <input 
                    required
-                   value={formData.header}
-                   onChange={(e) => setFormData({...formData, header: e.target.value})}
+                   value={formData.title}
+                   onChange={(e) => setFormData({...formData, title: e.target.value})}
                    placeholder="e.g. Critical Infrastructure Migration"
                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                  />
@@ -97,24 +97,27 @@ export function BroadcastModal({ isOpen, onClose }: BroadcastModalProps) {
                  <div className="space-y-2">
                     <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Dispatch Type</label>
                     <select 
-                      value={formData.type}
-                      onChange={(e) => setFormData({...formData, type: e.target.value})}
+                      value={formData.targetAudience}
+                      onChange={(e) => setFormData({...formData, targetAudience: e.target.value})}
                       className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-zinc-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer"
                     >
-                      <option value="Emergency">Emergency Alert</option>
-                      <option value="Maintenance">Maintenance Window</option>
-                      <option value="Feature">Platform Feature</option>
-                      <option value="Global">Global Announcement</option>
+                      <option value="Global">Global Audience</option>
+                      <option value="Creators">Creators Only</option>
+                      <option value="Premium">Premium Users</option>
+                      <option value="Staff">Internal Staff</option>
                     </select>
                  </div>
                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Action URL (Optional)</label>
-                    <input 
-                      value={formData.actionUrl}
-                      onChange={(e) => setFormData({...formData, actionUrl: e.target.value})}
-                      placeholder="https://spred.cc/alerts..."
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                    />
+                    <select 
+                      value={formData.priority}
+                      onChange={(e) => setFormData({...formData, priority: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-zinc-300 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="Urgent">Urgent</option>
+                      <option value="High">High</option>
+                      <option value="Normal">Normal</option>
+                      <option value="Low">Low</option>
+                    </select>
                  </div>
               </div>
 
@@ -123,8 +126,8 @@ export function BroadcastModal({ isOpen, onClose }: BroadcastModalProps) {
                  <textarea 
                    required
                    rows={4}
-                   value={formData.body}
-                   onChange={(e) => setFormData({...formData, body: e.target.value})}
+                   value={formData.message}
+                   onChange={(e) => setFormData({...formData, message: e.target.value})}
                    placeholder="Enter the message for all SPRED users..."
                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 px-6 text-white text-sm font-medium leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none"
                  />
