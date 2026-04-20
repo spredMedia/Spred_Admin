@@ -1,0 +1,192 @@
+/**
+ * Analytics Export Utilities
+ * Provides CSV, JSON, and PDF export functionality for analytics data
+ */
+
+export interface ExportOptions {
+  filename?: string;
+  timestamp?: boolean;
+}
+
+/**
+ * Export data to CSV format
+ */
+export function exportToCSV(
+  data: any[],
+  headers: string[],
+  options: ExportOptions = {}
+): void {
+  if (data.length === 0) {
+    console.warn("No data to export");
+    return;
+  }
+
+  const { filename = "export", timestamp = true } = options;
+  const timeStr = timestamp ? `_${new Date().toISOString().split("T")[0]}` : "";
+  const csvFilename = `${filename}${timeStr}.csv`;
+
+  // Create CSV header
+  const csvHeader = headers.join(",");
+
+  // Create CSV rows
+  const csvRows = data.map((row) =>
+    headers
+      .map((header) => {
+        const value = row[header];
+        // Escape quotes and wrap in quotes if contains comma
+        if (value === null || value === undefined) {
+          return "";
+        }
+        const stringValue = String(value).replace(/"/g, '""');
+        return stringValue.includes(",") ? `"${stringValue}"` : stringValue;
+      })
+      .join(",")
+  );
+
+  const csvContent = [csvHeader, ...csvRows].join("\n");
+
+  // Create blob and download
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  downloadBlob(blob, csvFilename);
+}
+
+/**
+ * Export data to JSON format
+ */
+export function exportToJSON(
+  data: any,
+  options: ExportOptions = {}
+): void {
+  const { filename = "export", timestamp = true } = options;
+  const timeStr = timestamp ? `_${new Date().toISOString().split("T")[0]}` : "";
+  const jsonFilename = `${filename}${timeStr}.json`;
+
+  const jsonData = {
+    exportDate: new Date().toISOString(),
+    data: data,
+  };
+
+  const jsonContent = JSON.stringify(jsonData, null, 2);
+  const blob = new Blob([jsonContent], {
+    type: "application/json;charset=utf-8;",
+  });
+
+  downloadBlob(blob, jsonFilename);
+}
+
+/**
+ * Export analytics report to PDF (requires backend)
+ */
+export async function exportToPDF(
+  reportData: any,
+  options: ExportOptions = {}
+): Promise<void> {
+  const { filename = "export", timestamp = true } = options;
+  const timeStr = timestamp ? `_${new Date().toISOString().split("T")[0]}` : "";
+  const pdfFilename = `${filename}${timeStr}.pdf`;
+
+  try {
+    const response = await fetch("/api/analytics/export/pdf", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("admin_token")}`,
+      },
+      body: JSON.stringify({
+        data: reportData,
+        filename: pdfFilename,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to generate PDF");
+    }
+
+    const blob = await response.blob();
+    downloadBlob(blob, pdfFilename);
+  } catch (error) {
+    console.error("PDF export failed:", error);
+    throw error;
+  }
+}
+
+/**
+ * Helper function to trigger browser download
+ */
+function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Format analytics data for CSV export
+ */
+export function formatAnalyticsForCSV(data: any[], type: string) {
+  switch (type) {
+    case "growth":
+      return {
+        data: data,
+        headers: ["date", "dau", "mau", "newSignups", "churnRate"],
+      };
+    case "churn":
+      return {
+        data: data,
+        headers: ["date", "lowRisk", "mediumRisk", "highRisk"],
+      };
+    case "segmentation":
+      return {
+        data: data,
+        headers: [
+          "segment",
+          "count",
+          "percentage",
+          "d30Retention",
+          "arpu",
+          "engagementScore",
+          "growthRate",
+        ],
+      };
+    case "creator":
+      return {
+        data: data,
+        headers: ["stage", "count", "percentage", "avgDaysToConvert", "monthlyGrowth"],
+      };
+    default:
+      return { data, headers: Object.keys(data[0] || {}) };
+  }
+}
+
+/**
+ * Generate analytics report summary
+ */
+export function generateReportSummary(metrics: any): string {
+  const date = new Date().toLocaleDateString();
+  const time = new Date().toLocaleTimeString();
+
+  return `
+SPRED Analytics Report
+Generated: ${date} at ${time}
+
+KEY METRICS:
+- Daily Active Users: ${metrics.dau?.toLocaleString() || "N/A"}
+- Monthly Active Users: ${metrics.mau?.toLocaleString() || "N/A"}
+- Churn Rate: ${metrics.churnRate || "N/A"}%
+- Engagement Score: ${metrics.engagement || "N/A"}/10
+
+USER SEGMENTS:
+- Free Users: ${metrics.freeUsers?.toLocaleString() || "N/A"}
+- Premium Users: ${metrics.premiumUsers?.toLocaleString() || "N/A"}
+- Creators: ${metrics.creators?.toLocaleString() || "N/A"}
+
+INSIGHTS:
+${metrics.insights?.join("\n") || "No insights available"}
+
+Generated by SPRED Admin Dashboard
+  `.trim();
+}

@@ -14,6 +14,14 @@ import { LineChartComponent } from "@/components/charts/LineChartComponent";
 import { AnalyticsCard } from "@/components/AnalyticsCard";
 import { CohortAnalysis, generateMockCohortData } from "@/components/CohortAnalysis";
 import { ReportBuilder } from "@/components/ReportBuilder";
+import { UserGrowthChart } from "@/components/analytics/UserGrowthChart";
+import { ChurnRiskDashboard } from "@/components/analytics/ChurnRiskDashboard";
+import { UserActivityHeatmap } from "@/components/analytics/UserActivityHeatmap";
+import { UserSegmentationBreakdown } from "@/components/analytics/UserSegmentationBreakdown";
+import { CreatorIdentificationMetrics } from "@/components/analytics/CreatorIdentificationMetrics";
+import { CohortRetentionAnalysis } from "@/components/analytics/CohortRetentionAnalysis";
+import { ExportModal } from "@/components/analytics/ExportModal";
+import { ScheduledReportsManager } from "@/components/analytics/ScheduledReportsManager";
 import { toast } from "@/lib/toast";
 
 interface Report {
@@ -31,6 +39,8 @@ export default function AnalyticsPage() {
   const [savedReports, setSavedReports] = useState<Report[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
   const [cohortData, setCohortData] = useState<any[]>([]);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportType, setExportType] = useState<"all" | "growth" | "churn" | "segmentation" | "creator" | "cohort">("all");
 
   useEffect(() => {
     // Simulate loading data
@@ -73,14 +83,25 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-10">
-      {/* Header */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-black tracking-tight text-white">
-          Analytics <span className="text-primary">Dashboard</span>
-        </h1>
-        <p className="text-zinc-400 text-lg">
-          Deep dive into user behavior, engagement, and revenue metrics.
-        </p>
+      {/* Header with Export */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-4xl font-black tracking-tight text-white">
+            Analytics <span className="text-primary">Dashboard</span>
+          </h1>
+          <p className="text-zinc-400 text-lg">
+            Deep dive into user behavior, engagement, and revenue metrics.
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            setExportType("all");
+            setExportModalOpen(true);
+          }}
+          className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold transition-colors whitespace-nowrap"
+        >
+          📊 Export Report
+        </button>
       </div>
 
       {/* Key Metrics */}
@@ -128,35 +149,11 @@ export default function AnalyticsPage() {
         />
       </div>
 
-      {/* Growth Metrics Chart */}
-      <Card className="glass-card border-none">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20">
-              <BarChart3 className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-xl font-bold text-white">
-                Growth Metrics
-              </CardTitle>
-              <p className="text-xs text-zinc-500 font-medium tracking-tight mt-0.5">
-                DAU vs MAU trends over time
-              </p>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <LineChartComponent
-            data={chartData}
-            lines={[
-              { key: "dau", stroke: "#F45303", name: "Daily Active Users" },
-              { key: "mau", stroke: "#D69E2E", name: "Monthly Active Users" },
-            ]}
-            height={300}
-            xAxisKey="date"
-          />
-        </CardContent>
-      </Card>
+      {/* Phase 2A: Enhanced Growth Metrics Chart */}
+      <UserGrowthChart data={chartData} period={30} />
+
+      {/* Phase 2A: Churn Risk Dashboard */}
+      <ChurnRiskDashboard />
 
       {/* Engagement Chart */}
       <Card className="glass-card border-none">
@@ -191,17 +188,20 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* Cohort Analysis */}
-      <Card className="glass-card border-none">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold text-white">
-            Retention Analysis
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CohortAnalysis data={cohortData} />
-        </CardContent>
-      </Card>
+      {/* Phase 2A: User Activity Heatmap */}
+      <UserActivityHeatmap />
+
+      {/* Phase 2A: User Segmentation */}
+      <UserSegmentationBreakdown />
+
+      {/* Phase 2A: Creator Identification Funnel */}
+      <CreatorIdentificationMetrics />
+
+      {/* Phase 2A: Enhanced Cohort Retention Analysis */}
+      <CohortRetentionAnalysis data={cohortData} />
+
+      {/* Scheduled Reports Manager */}
+      <ScheduledReportsManager />
 
       {/* Report Builder */}
       <Card className="glass-card border-none">
@@ -217,6 +217,14 @@ export default function AnalyticsPage() {
           />
         </CardContent>
       </Card>
+
+      {/* Export Modal */}
+      <ExportModal
+        data={chartData}
+        dataType={exportType}
+        isOpen={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+      />
 
       {/* Key Insights */}
       <Card className="glass-card border-none bg-gradient-to-r from-primary/5 to-amber-500/5">

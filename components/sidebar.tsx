@@ -18,6 +18,7 @@ import {
   BarChart3,
   AlertCircle,
   Settings2,
+  Film,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: "Overview", href: "/" },
   { icon: Users, label: "User Management", href: "/users" },
   { icon: ShieldAlert, label: "Moderation Hub", href: "/moderation" },
+  { icon: Film, label: "Drama Center", href: "/drama" },
   { icon: Video, label: "Content Control", href: "/videos" },
   { icon: Activity, label: "Live Monitoring", href: "/live" },
   { icon: BarChart3, label: "Analytics", href: "/analytics" },
