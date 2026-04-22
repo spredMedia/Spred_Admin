@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { ActionModal } from "@/components/ActionModal";
 import { SeriesTable } from "@/components/drama/SeriesTable";
 import { AddSeriesModal } from "@/components/drama/AddSeriesModal";
 import { ManageEpisodesModal } from "@/components/drama/ManageEpisodesModal";
@@ -26,6 +27,10 @@ export default function DramaCenterPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isManageEpisodesOpen, setIsManageEpisodesOpen] = useState(false);
   const [selectedSeries, setSelectedSeries] = useState<any | null>(null);
+
+  // Deletion State
+  const [seriesToDelete, setSeriesToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   async function loadSeries() {
     setLoading(true);
@@ -43,14 +48,29 @@ export default function DramaCenterPage() {
     loadSeries();
   }, []);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("⚠️ DELETION PROTOCOL\n\nAre you sure you want to purge this drama series? All episode links will be permanently severed. This action is irreversible.")) return;
+  const handleDelete = (id: string) => {
+    setSeriesToDelete(id);
+  };
+
+  const commitDeleteSeries = async () => {
+    if (!seriesToDelete) return;
     
+    setIsDeleting(true);
     try {
-      // Endpoint to be added to backend
-      alert("Delete functionality pending backend implement for hard-kill series.");
+      const res = await api.request(`/drama/series/${seriesToDelete}`, {
+        method: "DELETE"
+      });
+
+      if (res.succeeded) {
+        setSeriesToDelete(null);
+        loadSeries();
+      } else {
+        alert(res.message || "Purge failed.");
+      }
     } catch (err) {
-      alert("Purge failed.");
+      alert("Network protocol error during purge.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -189,6 +209,7 @@ export default function DramaCenterPage() {
           }}
           onEdit={(s) => alert(`Edit Identity Protocol: ${s.Title}`)}
           onDelete={handleDelete}
+          onPosterUpdated={loadSeries}
         />
       )}
 
@@ -205,6 +226,17 @@ export default function DramaCenterPage() {
         onClose={() => setIsManageEpisodesOpen(false)}
         series={selectedSeries}
         api={api}
+      />
+
+      <ActionModal 
+        isOpen={!!seriesToDelete}
+        onClose={() => setSeriesToDelete(null)}
+        onConfirm={commitDeleteSeries}
+        title="Purge Drama Series"
+        description="⚠️ You are about to initiate a Hard-Kill protocol. This series and all associated episode sequences will be permanently purged from the registry."
+        confirmLabel="Initiate Purge"
+        variant="danger"
+        loading={isDeleting}
       />
     </div>
   );

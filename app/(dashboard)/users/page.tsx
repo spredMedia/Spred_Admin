@@ -11,6 +11,7 @@ import {
   Ban,
   Mail,
   MoreVertical,
+  Users,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -158,7 +159,7 @@ export default function UsersPage() {
         {[
           { label: "Active Nodes", val: users.filter(u => u.isActive).length, icon: CheckCircle2, color: "text-emerald-500" },
           { label: "Verification Pending", val: 12, icon: Shield, color: "text-amber-500" },
-          { label: "Flagged Accounts", val: users.filter(u => !u.isActive).length, icon: Ban, color: "text-rose-500" },
+          { label: "Social Nodes", val: users.filter(u => u.followersCount > 0 || u.followingCount > 0).length, icon: Users, color: "text-primary" },
           { label: "Admin Tier", val: users.filter(u => u.role === 'Admin').length, icon: Shield, color: "text-blue-500" },
         ].map((stat, i) => (
           <div key={i} className="glass-card p-6 rounded-3xl flex items-center justify-between border-white/5">
@@ -242,6 +243,8 @@ export default function UsersPage() {
                 ? new Date(user.createdAt).toLocaleDateString()
                 : "-",
               subscription: user.subscription || "Free",
+              followers: user.followersCount || 0,
+              following: user.followingCount || 0,
             }))}
             columns={[
               {
@@ -320,6 +323,24 @@ export default function UsersPage() {
                 filterable: true,
                 render: (value) => (
                   <span className="text-sm font-medium text-zinc-300">{value}</span>
+                ),
+              },
+              {
+                key: "followers" as any,
+                label: "Followers",
+                sortable: true,
+                render: (value) => (
+                  <span className="text-sm font-bold text-primary">
+                    {value >= 1000 ? `${(value / 1000).toFixed(1)}K` : value}
+                  </span>
+                ),
+              },
+              {
+                key: "following" as any,
+                label: "Following",
+                sortable: true,
+                render: (value) => (
+                  <span className="text-sm text-zinc-400">{value}</span>
                 ),
               },
               {

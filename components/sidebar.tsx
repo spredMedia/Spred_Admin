@@ -28,6 +28,7 @@ import { useEffect, useState } from "react";
 const menuItems = [
   { icon: LayoutDashboard, label: "Overview", href: "/" },
   { icon: Users, label: "User Management", href: "/users" },
+  { icon: ShieldCheck, label: "Verifications", href: "/verifications" },
   { icon: ShieldAlert, label: "Moderation Hub", href: "/moderation" },
   { icon: Film, label: "Drama Center", href: "/drama" },
   { icon: Video, label: "Content Control", href: "/videos" },

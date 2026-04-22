@@ -46,20 +46,36 @@ export function AddSeriesModal({ isOpen, onClose, onSuccess, api }: AddSeriesMod
     setCast(cast.filter((_, i) => i !== index));
   };
 
+  const [posterFile, setPosterFile] = useState<File | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      const res = await api.request("/drama/series/create", {
-        method: "POST",
-        body: JSON.stringify({
-          ...formData,
-          tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
-          cast
-        })
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('synopsis', formData.synopsis);
+      formDataToSend.append('seriesPrice', String(formData.seriesPrice));
+      formDataToSend.append('tags', formData.tags);
+      formDataToSend.append('cast', JSON.stringify(cast));
+      
+      if (posterFile) {
+        formDataToSend.append('poster', posterFile);
+      }
+
+      // Using axios/fetch for multipart since api.request is JSON-centric
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/drama/series/create`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formDataToSend
       });
+
+      const res = await response.json();
 
       if (res.succeeded) {
         onSuccess();
@@ -114,6 +130,59 @@ export function AddSeriesModal({ isOpen, onClose, onSuccess, api }: AddSeriesMod
                 />
               </div>
 
+              {/* Poster Upload Zone */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Series Artwork (Portrait)</label>
+                <div 
+                  onClick={() => document.getElementById('series-poster-input')?.click()}
+                  className={cn(
+                    "relative group aspect-[2/3] rounded-[2rem] border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center overflow-hidden bg-zinc-950",
+                    posterFile ? "border-primary/50 shadow-2xl shadow-primary/10" : "border-white/10 hover:border-primary/30"
+                  )}
+                >
+                  <input 
+                    id="series-poster-input"
+                    type="file" 
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) setPosterFile(file);
+                    }}
+                  />
+                  {posterFile ? (
+                    <div className="relative w-full h-full group">
+                      <img 
+                        src={URL.createObjectURL(posterFile)} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover transition-transform group-hover:scale-110" 
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                         <p className="text-[10px] font-black text-white uppercase tracking-widest">Change Artwork</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="h-10 w-10 text-zinc-700 group-hover:text-primary transition-colors mb-4" />
+                      <p className="text-[10px] font-black text-white uppercase tracking-widest">Upload Main Poster</p>
+                      <p className="text-zinc-600 text-[8px] font-bold mt-2 uppercase">JPEG / PNG High-Res</p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Series Price (Coins)</label>
+                <input 
+                  type="number"
+                  value={formData.seriesPrice}
+                  onChange={(e) => setFormData({...formData, seriesPrice: parseInt(e.target.value)})}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-6">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Series Synopsis</label>
                 <textarea 
@@ -126,30 +195,17 @@ export function AddSeriesModal({ isOpen, onClose, onSuccess, api }: AddSeriesMod
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Series Price (Coins)</label>
-                  <input 
-                    type="number"
-                    value={formData.seriesPrice}
-                    onChange={(e) => setFormData({...formData, seriesPrice: parseInt(e.target.value)})}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Tags (Comma Sep)</label>
-                  <input 
+              <div className="space-y-2">
+                 <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Discovery Tags</label>
+                 <input 
                     value={formData.tags}
                     onChange={(e) => setFormData({...formData, tags: e.target.value})}
                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                    placeholder="Drama, Alpha, CEO"
+                    placeholder="Drama, Alpha, CEO (Comma separated)"
                   />
-                </div>
               </div>
-            </div>
 
-            <div className="space-y-6">
-              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+              <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1 flex items-center gap-2 pt-4">
                 <Users className="h-3 w-3 text-primary" />
                 Cast Manifest
               </label>

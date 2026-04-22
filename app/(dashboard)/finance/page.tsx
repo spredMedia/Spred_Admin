@@ -24,6 +24,7 @@ import { ActionModal } from "@/components/ActionModal";
 
 export default function FinanceHub() {
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [pendingSettlements, setPendingSettlements] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [forecast, setForecast] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -34,14 +35,16 @@ export default function FinanceHub() {
   async function loadFinance() {
     setLoading(true);
     try {
-      const [transRes, statsRes, forecastRes] = await Promise.all([
+      const [transRes, statsRes, forecastRes, settlementRes] = await Promise.all([
         api.getAllTransactions(),
         api.getWalletStats(),
-        api.getRevenueForecast()
+        api.getRevenueForecast(),
+        api.getPendingSettlements()
       ]);
       setTransactions(Array.isArray(transRes.data) ? transRes.data : []);
       setStats(statsRes.data);
       setForecast(forecastRes.data);
+      setPendingSettlements(Array.isArray(settlementRes.settlements) ? settlementRes.settlements : []);
     } catch (err) {
       console.error("Finance load error:", err);
     } finally {
@@ -57,7 +60,8 @@ export default function FinanceHub() {
     if (!selectedTx) return;
     setActionLoading(true);
     try {
-      await api.processPayout(selectedTx.Id, action);
+      // Use adjudicateSettlement which handles the atomic WithdrawalAudits + WalletTransactions flow
+      await api.adjudicateSettlement(selectedTx.RequestId || selectedTx.Id, action);
       setIsPayoutModalOpen(false);
       setSelectedTx(null);
       loadFinance();
@@ -110,8 +114,8 @@ export default function FinanceHub() {
             bg: "bg-blue-500/10"
           },
           { 
-            label: "Mesh Impact", 
-            val: stats?.meshRevenue ? `₦${stats.meshRevenue.toLocaleString()}` : "₦0", 
+            label: "Platform Revenue", 
+            val: stats?.platformEarnings ? `₦${stats.platformEarnings.toLocaleString()}` : "₦0", 
             change: "+18.2%", 
             icon: Zap, 
             color: "text-emerald-500",
@@ -139,6 +143,59 @@ export default function FinanceHub() {
           </div>
         ))}
       </div>
+
+      {/* Settlement Adjudication Queue */}
+      {pendingSettlements.length > 0 && (
+        <div className="glass-card p-8 rounded-[2.5rem] border-primary/20 bg-primary/5 animate-in slide-in-from-top duration-700">
+           <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                 <div className="h-12 w-12 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                    <Clock className="h-6 w-6 text-white" />
+                 </div>
+                 <div>
+                    <h2 className="text-xl font-black text-white">Settlement Queue</h2>
+                    <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em] mt-1">Institutional Payout Governance Required</p>
+                 </div>
+              </div>
+              <div className="px-4 py-2 rounded-full bg-white/5 border border-white/10">
+                 <p className="text-xs font-black text-primary uppercase tracking-widest">{pendingSettlements.length} Pending</p>
+              </div>
+           </div>
+           
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pendingSettlements.map((s, i) => (
+                <div key={i} className="p-6 rounded-3xl bg-zinc-900 shadow-xl border border-white/5 hover:border-primary/30 transition-all group">
+                   <div className="flex justify-between items-start mb-4">
+                      <div>
+                         <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">Net Payout</p>
+                         <p className="text-2xl font-black text-white mt-1 tracking-tighter">₦{parseFloat(s.NetPayout).toLocaleString()}</p>
+                      </div>
+                      <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                   </div>
+                   <div className="space-y-2 mb-6">
+                      <div className="flex justify-between text-[10px]">
+                         <span className="text-zinc-600 uppercase font-black tracking-widest">Creator</span>
+                         <span className="text-zinc-400 font-bold uppercase">{s.FirstName} {s.LastName}</span>
+                      </div>
+                      <div className="flex justify-between text-[10px]">
+                         <span className="text-zinc-600 uppercase font-black tracking-widest">Verification</span>
+                         <span className="text-emerald-500 font-black uppercase tracking-widest">{s.VerificationTier}</span>
+                      </div>
+                   </div>
+                   <button 
+                     onClick={() => {
+                       setSelectedTx(s);
+                       setIsPayoutModalOpen(true);
+                     }}
+                     className="w-full py-3 rounded-xl bg-white/5 text-white text-[10px] font-black uppercase tracking-widest border border-white/5 group-hover:bg-primary group-hover:border-primary transition-all shadow-lg"
+                   >
+                     Adjudicate
+                   </button>
+                </div>
+              ))}
+           </div>
+        </div>
+      )}
 
       {/* Revenue Intelligence Module */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -260,15 +317,19 @@ export default function FinanceHub() {
                               )}>
                                  {t.Status === "Successful" ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownLeft className="h-4 w-4" />}
                               </div>
-                              <span className="text-xs font-mono font-bold text-zinc-400">#{t.Id?.slice(0, 12)}</span>
+                              <span className="text-xs font-mono font-bold text-zinc-400">
+                                {t.UserId === 'SPRED_PLATFORM' ? 'REV' : 'TX'}-{t.Id?.split('-').pop()}
+                              </span>
                            </div>
                         </td>
                         <td className="px-4 py-6">
                            <div className="flex items-center gap-3">
                               <div className="h-8 w-8 rounded-full bg-zinc-700/50 border border-white/10 flex items-center justify-center text-[8px] font-black text-zinc-500">
-                                {t.FirstName?.[0]}{t.LastName?.[0]}
+                                {t.UserId === 'SPRED_PLATFORM' ? 'SP' : (t.FirstName?.[0] || 'U')}{(t.LastName?.[0] || '')}
                               </div>
-                              <span className="text-xs font-bold text-white uppercase tracking-tight truncate max-w-[150px]">{t.FirstName} {t.LastName}</span>
+                              <span className="text-xs font-bold text-white uppercase tracking-tight truncate max-w-[150px]">
+                                {t.UserId === 'SPRED_PLATFORM' ? 'SPRED PLATFORM' : `${t.FirstName} ${t.LastName}`}
+                              </span>
                            </div>
                         </td>
                         <td className="px-4 py-6">
@@ -341,7 +402,7 @@ export default function FinanceHub() {
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Transaction Details</p>
             <div className="flex justify-between items-center">
               <span className="text-xs text-zinc-400">Reference:</span>
-              <span className="text-xs font-mono font-bold text-white">#{selectedTx?.Id?.slice(0, 16)}</span>
+              <span className="text-xs font-mono font-bold text-white">#{selectedTx?.RequestId || selectedTx?.Id?.slice(0, 16)}</span>
             </div>
             <div className="flex justify-between items-center mt-2">
               <span className="text-xs text-zinc-400">Recipient:</span>
@@ -349,13 +410,29 @@ export default function FinanceHub() {
             </div>
             <div className="flex justify-between items-center mt-2 border-t border-white/5 pt-2">
               <span className="text-xs font-bold text-white">Amount:</span>
-              <span className="text-xl font-black text-primary tracking-tighter">₦{(parseFloat(selectedTx?.Amount) || 0).toLocaleString()}</span>
+              <span className="text-xl font-black text-primary tracking-tighter">₦{(parseFloat(selectedTx?.Amount || selectedTx?.NetPayout) || 0).toLocaleString()}</span>
             </div>
           </div>
+
+          {selectedTx?.AccountDetails && (
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Fulfillment Destination</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                   <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Bank Code</p>
+                   <p className="text-xs font-black text-white">{(typeof selectedTx.AccountDetails === 'string' ? JSON.parse(selectedTx.AccountDetails) : selectedTx.AccountDetails).account_bank || '---'}</p>
+                </div>
+                <div>
+                   <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Account Number</p>
+                   <p className="text-xs font-black text-white">{(typeof selectedTx.AccountDetails === 'string' ? JSON.parse(selectedTx.AccountDetails) : selectedTx.AccountDetails).account_number || '---'}</p>
+                </div>
+              </div>
+            </div>
+          )}
           
           <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10">
             <p className="text-[10px] text-primary font-black uppercase tracking-widest">⚠️ Compliance Verification</p>
-            <p className="text-[10px] text-zinc-500 mt-1 leading-relaxed">By approving, you confirm that this creator has met all content quality guidelines and the wallet balance is verified.</p>
+            <p className="text-[10px] text-zinc-500 mt-1 leading-relaxed">By approving, you confirm that this creator has met all content quality guidelines and the settlement details are verified against their KYC records.</p>
           </div>
         </div>
       </ActionModal>

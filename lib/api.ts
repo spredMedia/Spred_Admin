@@ -130,6 +130,10 @@ class SpredApiService {
     return this.request<any[]>('/Live/channels');
   }
 
+  async getSocialGlobalStats() {
+    return this.request<any>('/Analytics/social-global');
+  }
+
   /**
    * USER MANAGEMENT
    */
@@ -141,6 +145,12 @@ class SpredApiService {
     return this.request(`/UserManagement/User/${id}/status`, {
       method: 'PUT',
       body: JSON.stringify({ isActive }),
+    });
+  }
+
+  async deleteUser(id: string) {
+    return this.request(`/UserManagement/User/${id}`, {
+      method: 'DELETE',
     });
   }
 
@@ -218,6 +228,17 @@ class SpredApiService {
     });
   }
 
+  async getPendingSettlements() {
+    return this.request<any>('/admin/finance/settlements/pending');
+  }
+
+  async adjudicateSettlement(requestId: string, action: 'approve' | 'reject') {
+    return this.request('/Finance/Payout/process', {
+      method: 'POST',
+      body: JSON.stringify({ requestId, action }),
+    });
+  }
+
   /**
    * LIVE STREAM GOVERNANCE
    */
@@ -270,6 +291,17 @@ class SpredApiService {
   async getCreatorsDirectory(filters: { page?: number, limit?: number, tier?: string, status?: string } = {}) {
     const params = new URLSearchParams(filters as any).toString();
     return this.request<any[]>(`/creators/directory?${params}`);
+  }
+
+  async getPendingVerifications() {
+    return this.request<any[]>('/admin/creators/verify/pending');
+  }
+
+  async judgeVerification(userId: string, action: 'approve' | 'reject', notes?: string) {
+    return this.request('/admin/creators/verify/judge', {
+      method: 'POST',
+      body: JSON.stringify({ userId, action, notes }),
+    });
   }
 
   async updateCreatorTier(userId: string, tier: 'silver' | 'gold' | 'platinum') {

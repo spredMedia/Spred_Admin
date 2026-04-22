@@ -27,6 +27,7 @@ export default function DashboardOverview() {
   const [activeStreams, setActiveStreams] = useState<any[]>([]);
   const [health, setHealth] = useState<any>(null);
   const [moderation, setModeration] = useState<any>(null);
+  const [socialStats, setSocialStats] = useState<any>(null);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState<any>({
@@ -64,18 +65,20 @@ export default function DashboardOverview() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [statsRes, streamsRes, healthRes, modRes, auditRes] = await Promise.all([
+        const [statsRes, streamsRes, healthRes, modRes, auditRes, socialRes] = await Promise.all([
           api.getDashboardStats(),
           api.getActiveStreams(),
           api.getCreatorOverallHealth(),
           api.getModerationStatus(),
-          api.getAuditLogs()
+          api.getAuditLogs(),
+          api.getSocialGlobalStats()
         ]);
         setStats(statsRes.data);
         setActiveStreams(Array.isArray(streamsRes.data) ? streamsRes.data : []);
         setHealth(healthRes.data);
         setModeration(modRes.data);
         setAuditLogs(Array.isArray(auditRes.data) ? auditRes.data.slice(0, 5) : []);
+        setSocialStats(socialRes.data);
         setChartData(generateChartData());
       } catch (err) {
         console.error("Dashboard load error:", err);
@@ -172,6 +175,10 @@ export default function DashboardOverview() {
                     <div className="flex items-center gap-2">
                        <span className="text-[10px] text-zinc-500 font-bold">PLATINUM NODES:</span>
                        <span className="text-sm font-black text-white">{health?.platinum_creators || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                       <span className="text-[10px] text-zinc-500 font-bold">SOCIAL CONNECTIONS:</span>
+                       <span className="text-sm font-black text-blue-500">{socialStats?.totalRelationships || 0}</span>
                     </div>
                     <div className="flex items-center gap-2">
                        <span className="text-[10px] text-zinc-500 font-bold">PENDING MODERATION:</span>
@@ -284,6 +291,43 @@ export default function DashboardOverview() {
               data={chartData.p2pVolume}
               bars={[
                 { key: "transfers", fill: "#3B82F6", name: "Transfer Count" },
+              ]}
+              height={250}
+              xAxisKey="date"
+            />
+          </CardContent>
+        </Card>
+
+        {/* NEW: Social Growth Trend */}
+        <Card className="glass-card border-none">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20">
+                <TrendingUp className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-bold text-white">Social Engagement</CardTitle>
+                <p className="text-xs text-zinc-500 font-medium tracking-tight mt-0.5">Global relationship growth</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-6 flex items-center gap-8">
+              <MetricTicker
+                value={socialStats?.totalRelationships || 0}
+                prevValue={(socialStats?.totalRelationships || 0) * 0.9}
+                label="Relationships"
+                decimals={0}
+                color="primary"
+              />
+            </div>
+            <LineChartComponent
+              data={socialStats?.growthTrend?.labels.map((label: string, i: number) => ({
+                date: label,
+                growth: socialStats?.growthTrend?.data[i]
+              })) || []}
+              lines={[
+                { key: "growth", stroke: "#F45303", name: "New Relationships" },
               ]}
               height={250}
               xAxisKey="date"

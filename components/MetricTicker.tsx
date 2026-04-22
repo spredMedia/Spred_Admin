@@ -12,7 +12,7 @@ interface MetricTickerProps {
   suffix?: string;
   decimals?: number;
   animate?: boolean;
-  color?: "emerald" | "rose" | "primary" | "blue";
+  color?: "emerald" | "rose" | "primary" | "blue" | "amber";
 }
 
 export function MetricTicker({
@@ -59,6 +59,7 @@ export function MetricTicker({
     rose: "text-rose-500 bg-rose-500/10",
     primary: "text-primary bg-primary/10",
     blue: "text-blue-500 bg-blue-500/10",
+    amber: "text-amber-500 bg-amber-500/10",
   };
 
   return (
